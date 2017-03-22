@@ -30,7 +30,7 @@ class StrategyTestCase < MiniTest::Test
   end
 
   def user_info
-    @user_info ||= Pixelpin::ResponseObject::UserInfo.new(
+    @user_info ||= OpenIDConnect::ResponseObject::UserInfo.new(
       sub: SecureRandom.hex(16),
       name: Faker::Name.name,
       email: Faker::Internet.email,
@@ -56,7 +56,7 @@ class StrategyTestCase < MiniTest::Test
   end
 
   def strategy
-    @strategy ||= OmniAuth::Strategies::Pixelpin.new(DummyApp.new).tap do |strategy|
+    @strategy ||= OmniAuth::Strategies::OpenIDConnect.new(DummyApp.new).tap do |strategy|
       strategy.options.client_options.identifier = @identifier
       strategy.options.client_options.secret = @secret
       strategy.stubs(:request).returns(request)

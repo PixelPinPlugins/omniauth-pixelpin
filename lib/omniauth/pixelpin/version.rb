@@ -1,5 +1,5 @@
 module OmniAuth
-  module Pixelpin
-    VERSION = "0.1.1"
+  module OpenIDConnect
+    VERSION = "1.1.0"
   end
 end

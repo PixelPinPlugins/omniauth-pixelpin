@@ -1,5 +1,5 @@
 module OmniAuth
-  module Pixelpin
+  module OpenIDConnect
     class Error < RuntimeError; end
     class MissingCodeError < Error; end
   end

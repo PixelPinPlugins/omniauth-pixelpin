@@ -4,10 +4,11 @@ require 'net/http'
 require 'open-uri'
 require 'omniauth'
 require 'openid_connect'
+require 'json'
 
 module OmniAuth
   module Strategies
-    class Pixelpin
+    class OpenIDConnect
       include OmniAuth::Strategy
 
       option :client_options, {
@@ -15,15 +16,15 @@ module OmniAuth
         secret: nil,
         redirect_uri: nil,
         scheme: "https",
-        host: nil,
+        host: "login.pixelpin.io",
         port: 443,
         authorization_endpoint: "https://login.pixelpin.io/connect/authorize",
         token_endpoint: "https://login.pixelpin.io/connect/token",
         userinfo_endpoint: "https://login.pixelpin.io/connect/userinfo",
         jwks_uri: 'https://login.pixelpin.io/.well-known/jwks'
       }
-      option :issuer
-      option :discovery, false
+      option :issuer, "https://login.pixelpin.io"
+      option :discovery, true
       option :client_signing_alg
       option :client_jwk_signing_key
       option :client_x509_signing_key
@@ -45,6 +46,24 @@ module OmniAuth
 
       uid { user_info.sub }
 
+      def formatted_address
+        formatted_address = HashWithIndifferentAccess.new(user_info.raw_attributes)
+      end
+
+      def address
+        if formatted_address["address"].nil?
+          address = JSON.parse('{
+            "street_address": "",
+            "country": "",
+            "region": "",
+            "locality": "",
+            "postal_code": ""
+            }')
+        else
+          address = ActiveSupport::JSON.decode(formatted_address["address"])
+        end
+      end
+
       info do
         {
           name: user_info.name,
@@ -53,10 +72,20 @@ module OmniAuth
           first_name: user_info.given_name,
           last_name: user_info.family_name,
           gender: user_info.gender,
-          image: user_info.picture,
           phone: user_info.phone_number,
+          birthdate: user_info.birthdate,
+          street_address: address["street_address"],
+          country: address["country"],
+          region: address["region"],
+          city: address["locality"],
+          zip: address["postal_code"],
           urls: { website: user_info.website }
         }
+      end
+
+      def user_info
+        address = JSON.parse(user_info.address)
+
       end
 
       extra do
@@ -74,11 +103,15 @@ module OmniAuth
       end
 
       def client
-        @client ||= ::Pixelpin::Client.new(client_options)
+        @client ||= ::OpenIDConnect::Client.new(client_options)
       end
 
       def config
-        @config ||= ::Pixelpin::Discovery::Provider::Config.discover!(options.issuer)
+        cache_options = {
+          host:client_options.host,
+          port:client_options.port
+        }
+        @config ||= ::OpenIDConnect::Discovery::Provider::Config.discover!(options.issuer, cache_options = [client_options.host, client_options.port])
       end
 
       def request_phase
@@ -94,7 +127,7 @@ module OmniAuth
         elsif request.params['state'].to_s.empty? || request.params['state'] != stored_state
           return Rack::Response.new(['401 Unauthorized'], 401).finish
         elsif !request.params["code"]
-          return fail!(:missing_code, OmniAuth::Pixelpin::MissingCodeError.new(request.params["error"]))
+          return fail!(:missing_code, OmniAuth::OpenIDConnect::MissingCodeError.new(request.params["error"]))
         else
           options.issuer = issuer if options.issuer.blank?
           discover! if options.discovery
@@ -140,7 +173,7 @@ module OmniAuth
 
       def issuer
         resource = "#{client_options.scheme}://#{client_options.host}" + ((client_options.port) ? ":#{client_options.port.to_s}" : '')
-        ::Pixelpin::Discovery::Provider.discover!(resource).issuer
+        ::OpenIDConnect::Discovery::Provider.discover!(resource).issuer
       end
 
       def discover!
@@ -171,7 +204,7 @@ module OmniAuth
       end
 
       def decode_id_token(id_token)
-        ::Pixelpin::ResponseObject::IdToken.decode(id_token, public_key)
+        ::OpenIDConnect::ResponseObject::IdToken.decode(id_token, public_key)
       end
 
 
@@ -248,4 +281,4 @@ module OmniAuth
   end
 end
 
-OmniAuth.config.add_camelization 'openid_connect', 'Pixelpin'
+OmniAuth.config.add_camelization 'pixelpin', 'OpenIDConnect'

@@ -1,6 +1,6 @@
 require_relative '../../../test_helper'
 
-class OmniAuth::Strategies::PixelpinTest < StrategyTestCase
+class OmniAuth::Strategies::OpenIDConnectTest < StrategyTestCase
   def test_client_options_defaults
     assert_equal 'https', strategy.options.client_options.scheme
     assert_equal 443, strategy.options.client_options.port
@@ -21,16 +21,16 @@ class OmniAuth::Strategies::PixelpinTest < StrategyTestCase
     strategy.options.client_options.host = 'example.com'
     strategy.options.discovery = true
 
-    issuer = stub('Pixelpin::Discovery::Issuer')
+    issuer = stub('OpenIDConnect::Discovery::Issuer')
     issuer.stubs(:issuer).returns('https://example.com/')
-    ::Pixelpin::Discovery::Provider.stubs(:discover!).returns(issuer)
+    ::OpenIDConnect::Discovery::Provider.stubs(:discover!).returns(issuer)
 
-    config = stub('Pixelpin::Discovery::Provder::Config')
+    config = stub('OpenIDConnect::Discovery::Provder::Config')
     config.stubs(:authorization_endpoint).returns('https://example.com/authorization')
     config.stubs(:token_endpoint).returns('https://example.com/token')
     config.stubs(:userinfo_endpoint).returns('https://example.com/userinfo')
     config.stubs(:jwks_uri).returns('https://example.com/jwks')
-    ::Pixelpin::Discovery::Provider::Config.stubs(:discover!).with('https://example.com/').returns(config)
+    ::OpenIDConnect::Discovery::Provider::Config.stubs(:discover!).with('https://example.com/').returns(config)
 
     strategy.expects(:redirect).with(regexp_matches(expected_redirect))
     strategy.request_phase
@@ -57,12 +57,12 @@ class OmniAuth::Strategies::PixelpinTest < StrategyTestCase
     strategy.options.client_signing_alg = :RS256
     strategy.options.client_jwk_signing_key = File.read('test/fixtures/jwks.json')
 
-    id_token = stub('Pixelpin::ResponseObject::IdToken')
+    id_token = stub('OpenIDConnect::ResponseObject::IdToken')
     id_token.stubs(:verify!).with({:issuer => strategy.options.issuer, :client_id => @identifier, :nonce => nonce}).returns(true)
-    ::Pixelpin::ResponseObject::IdToken.stubs(:decode).returns(id_token)
+    ::OpenIDConnect::ResponseObject::IdToken.stubs(:decode).returns(id_token)
 
     strategy.unstub(:user_info)
-    access_token = stub('Pixelpin::AccessToken')
+    access_token = stub('OpenIDConnect::AccessToken')
     access_token.stubs(:access_token)
     access_token.stubs(:refresh_token)
     access_token.stubs(:expires_in)
@@ -87,25 +87,25 @@ class OmniAuth::Strategies::PixelpinTest < StrategyTestCase
     strategy.options.client_options.host = 'example.com'
     strategy.options.discovery = true
 
-    issuer = stub('Pixelpin::Discovery::Issuer')
+    issuer = stub('OpenIDConnect::Discovery::Issuer')
     issuer.stubs(:issuer).returns('https://example.com/')
-    ::Pixelpin::Discovery::Provider.stubs(:discover!).returns(issuer)
+    ::OpenIDConnect::Discovery::Provider.stubs(:discover!).returns(issuer)
 
-    config = stub('Pixelpin::Discovery::Provder::Config')
+    config = stub('OpenIDConnect::Discovery::Provder::Config')
     config.stubs(:authorization_endpoint).returns('https://example.com/authorization')
     config.stubs(:token_endpoint).returns('https://example.com/token')
     config.stubs(:userinfo_endpoint).returns('https://example.com/userinfo')
     config.stubs(:jwks_uri).returns('https://example.com/jwks')
     config.stubs(:jwks).returns(jwks)
 
-    ::Pixelpin::Discovery::Provider::Config.stubs(:discover!).with('https://example.com/').returns(config)
+    ::OpenIDConnect::Discovery::Provider::Config.stubs(:discover!).with('https://example.com/').returns(config)
 
-    id_token = stub('Pixelpin::ResponseObject::IdToken')
+    id_token = stub('OpenIDConnect::ResponseObject::IdToken')
     id_token.stubs(:verify!).with({:issuer => 'https://example.com/', :client_id => @identifier, :nonce => nonce}).returns(true)
-    ::Pixelpin::ResponseObject::IdToken.stubs(:decode).returns(id_token)
+    ::OpenIDConnect::ResponseObject::IdToken.stubs(:decode).returns(id_token)
 
     strategy.unstub(:user_info)
-    access_token = stub('Pixelpin::AccessToken')
+    access_token = stub('OpenIDConnect::AccessToken')
     access_token.stubs(:access_token)
     access_token.stubs(:refresh_token)
     access_token.stubs(:expires_in)
@@ -210,11 +210,11 @@ class OmniAuth::Strategies::PixelpinTest < StrategyTestCase
     strategy.options.client_signing_alg = :RS256
     strategy.options.client_jwk_signing_key = File.read('test/fixtures/jwks.json')
 
-    id_token = stub('Pixelpin::ResponseObject::IdToken')
+    id_token = stub('OpenIDConnect::ResponseObject::IdToken')
     id_token.stubs(:verify!).returns(true)
-    ::Pixelpin::ResponseObject::IdToken.stubs(:decode).returns(id_token)
+    ::OpenIDConnect::ResponseObject::IdToken.stubs(:decode).returns(id_token)
 
-    access_token = stub('Pixelpin::AccessToken')
+    access_token = stub('OpenIDConnect::AccessToken')
     access_token.stubs(:access_token).returns(SecureRandom.hex(16))
     access_token.stubs(:refresh_token).returns(SecureRandom.hex(16))
     access_token.stubs(:expires_in).returns(Time.now)
@@ -300,9 +300,9 @@ class OmniAuth::Strategies::PixelpinTest < StrategyTestCase
     request.stubs(:path_info).returns('')
     strategy.call!({'rack.session' => {'omniauth.state' => state, 'omniauth.nonce' => nonce}})
 
-    id_token = stub('Pixelpin::ResponseObject::IdToken')
+    id_token = stub('OpenIDConnect::ResponseObject::IdToken')
     id_token.stubs(:verify!).with({:issuer => strategy.options.issuer, :client_id => @identifier, :nonce => nonce}).returns(true)
-    ::Pixelpin::ResponseObject::IdToken.stubs(:decode).returns(id_token)
+    ::OpenIDConnect::ResponseObject::IdToken.stubs(:decode).returns(id_token)
 
     HTTPClient.any_instance.stubs(:post).with(
       "#{opts.scheme}://#{opts.host}:#{opts.port}#{opts.token_endpoint}",
