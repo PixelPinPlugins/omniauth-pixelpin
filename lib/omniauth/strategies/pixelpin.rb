@@ -23,7 +23,7 @@ module OmniAuth
         userinfo_endpoint: "https://login.pixelpin.io/connect/userinfo",
         jwks_uri: 'https://login.pixelpin.io/.well-known/jwks'
       }
-      option :issuer, "https://login.pixelpin.io"
+      option :issuer, "https://login.pixelpin.io/"
       option :discovery, true
       option :client_signing_alg
       option :client_jwk_signing_key
